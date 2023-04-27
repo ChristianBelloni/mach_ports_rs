@@ -26,7 +26,10 @@ use mach2::{
     },
     traps,
 };
-use std::mem::ManuallyDrop;
+use std::{
+    mem::ManuallyDrop,
+    os::fd::{AsRawFd, RawFd},
+};
 
 fn mod_refs_wrapper(
     name: mach_port_t,
@@ -371,6 +374,12 @@ impl From<SendOnceRight> for AnySendRight {
     #[inline]
     fn from(right: SendOnceRight) -> Self {
         AnySendRight::SendOnce(right)
+    }
+}
+
+impl AsRawFd for RecvRight {
+    fn as_raw_fd(&self) -> std::os::fd::RawFd {
+        self.as_raw_name() as _
     }
 }
 
