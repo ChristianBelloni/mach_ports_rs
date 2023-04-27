@@ -37,7 +37,10 @@ impl Buffer {
 
     /// Creates a new message buffer with the specified inline capacity. The capacity should not
     /// include the header's size as it is added automatically.
-    pub fn with_capacity(capacity: usize) -> Self {
+    pub fn with_capacity(mut capacity: usize) -> Self {
+        if capacity <= 128 {
+            capacity = 128;
+        }
         let capacity = capacity.try_into().unwrap();
         let layout = Self::layout_for_capacity(capacity);
         let ptr = unsafe {
