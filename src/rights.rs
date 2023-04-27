@@ -26,10 +26,7 @@ use mach2::{
     },
     traps,
 };
-use std::{
-    mem::ManuallyDrop,
-    os::fd::{AsRawFd, RawFd},
-};
+use std::{mem::ManuallyDrop, os::fd::AsRawFd};
 
 fn mod_refs_wrapper(
     name: mach_port_t,
@@ -297,6 +294,30 @@ impl RecvRight {
             mach_msg(
                 data.as_ptr() as *mut mach_msg_header_t,
                 MACH_RCV_MSG,
+                0,
+                4096,
+                self.0,
+                0,
+                MACH_PORT_NULL,
+            )
+        };
+
+        if result == KERN_SUCCESS {
+            Ok(MsgParser::new(buffer))
+        } else {
+            Err(RecvError::from_bits(result))
+        }
+    }
+    /// Receives a Mach message into the specified buffer without blocking
+    pub fn try_recv<'buffer>(
+        &self,
+        buffer: &'buffer mut Buffer,
+    ) -> Result<MsgParser<'buffer>, RecvError> {
+        let data = buffer.as_slice();
+        let result = unsafe {
+            mach_msg(
+                data.as_ptr() as *mut mach_msg_header_t,
+                MACH_RCV_MSG | MACH_RCV_TIMEOUT,
                 0,
                 4096,
                 self.0,
